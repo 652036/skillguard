@@ -1,0 +1,30 @@
+name: SkillGuard
+description: Scan Agent Skills (SKILL.md packages) for security and quality issues
+author: SkillGuard Contributors
+branding:
+  icon: shield
+  color: red
+
+inputs:
+  path:
+    description: Path to a skill directory, a repo of skills, or a SKILL.md file
+    required: false
+    default: "."
+  fail-on:
+    description: Minimum severity that fails the job (critical, high, medium, low)
+    required: false
+    default: "high"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install SkillGuard
+      shell: bash
+      run: pip install -e "${{ github.action_path }}"
+    - name: Scan skills
+      shell: bash
+      run: skillguard scan "${{ inputs.path }}" --fail-on "${{ inputs.fail-on }}"

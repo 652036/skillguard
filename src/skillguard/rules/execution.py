@@ -356,10 +356,6 @@ def _ast_looks_remote(node: ast.AST, remote_names: set[str]) -> bool:
         "post",
         "request",
         "fetch",
-        "read",
-        "text",
-        "content",
-        "json",
     }
     for child in ast.walk(node):
         if isinstance(child, ast.Name) and child.id in remote_names:

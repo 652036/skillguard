@@ -89,12 +89,13 @@ _DEFENSE = re.compile(
     r"guardrail|content\s+filter|content\s+safety|model\s*armor|against|"
     r"untrusted|treat\s+(?:it|them|this)\s+as\s+data|not\s+an\s+action|"
     r"if\s+(?:the\s+)?(?:page|content|dom|text|browser)\s+contains|"
-    r"example|e\.g\.|quoted|anti-?pattern|do\s+not\s+use)\b"
+    r"for\s+example|as\s+an\s+example|an\s+example\s+of|example\s+below|"
+    r"e\.g\.|quoted|anti-?pattern|do\s+not\s+use)\b"
 )
 
 _NEGATION_PREFIX = re.compile(
-    r"(?i)\b(?:never|do\s+not|don't|must\s+not|cannot|can't|no|without|avoid|"
-    r"forbid(?:den)?|block|deny|skip)\b"
+    r"(?i)\b(?:never|do\s+not|don't|must\s+not|cannot|can't|avoid|"
+    r"forbid(?:den)?|deny)\b"
 )
 
 

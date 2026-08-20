@@ -57,3 +57,16 @@ def test_read_text_skips_nul_in_first_8k(tmp_path: Path) -> None:
     blob.write_bytes(b"abc\x00def" + b"Z" * 100)
     assert read_text(blob) is None
 
+
+
+def test_scans_shipped_ssh_key(tmp_path: Path) -> None:
+    skill = tmp_path / "pack"
+    ssh = skill / ".ssh"
+    ssh.mkdir(parents=True)
+    (skill / "SKILL.md").write_text("---\nname: pack\ndescription: d\n---\n", encoding="utf-8")
+    (ssh / "id_rsa").write_text("-----BEGIN OPENSSH PRIVATE KEY-----\nDEMO\n", encoding="utf-8")
+    (skill / "credentials").write_text("aws_access_key_id=AKIATEST\n", encoding="utf-8")
+    roots = discover_skills(skill)
+    files = {p.name for p in iter_skill_files(roots[0])}
+    assert "id_rsa" in files
+    assert "credentials" in files

@@ -62,6 +62,12 @@ SCAN_FILENAMES = {
     ".env.example",
 }
 
+SCAN_HIDDEN_DIRS = {".ssh", ".aws"}
+SCAN_CREDENTIAL_NAMES = {
+    "id_rsa", "id_ed25519", "authorized_keys",
+    "credentials", "credentials.json", "secrets.env", "auth.json",
+}
+
 MAX_FILE_BYTES = 1_000_000
 
 
@@ -131,7 +137,7 @@ def iter_skill_files(skill: SkillRoot, scan_target: Path | None = None) -> list[
             d
             for d in dirnames
             if d not in SKIP_DIR_NAMES
-            and not d.startswith(".")
+            and (not d.startswith(".") or d in SCAN_HIDDEN_DIRS)
             and (resolved / d) not in nested_roots
         ]
         for name in filenames:
@@ -148,6 +154,8 @@ def _should_scan_file(path: Path) -> bool:
         # Still scan .env* and hidden SKILL.md variants already covered.
         if not name.lower().startswith(".env"):
             return False
+    if name.lower() in SCAN_CREDENTIAL_NAMES:
+        return True
     suffix = path.suffix.lower()
     if suffix in SCAN_SUFFIXES or name.lower() in SCAN_FILENAMES:
         return True

@@ -50,13 +50,13 @@ SG304 = Rule(
 
 SG305 = Rule(
     id="SG305",
-    severity=Severity.MEDIUM,
+    severity=Severity.HIGH,
     title="Oversized instruction file",
     description=(
         "An instruction / markdown file exceeds 1 MB. Padding has been used to hide "
         "stagers from scanners that skip large files (omnicogg)."
     ),
-    false_positives="Genuine large reference dumps are rare in Agent Skills; still medium-only.",
+    false_positives="A genuine huge reference dump will also fail default --fail-on high.",
     applies_to=frozenset({"skill"}),
 )
 

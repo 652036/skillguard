@@ -87,7 +87,7 @@ Exit code `1` if any finding is at least `--fail-on` (default `high`). `2` on ba
 | SG302 | medium | `SKILL.md` missing name or description |
 | SG303 | medium | Overly broad "run any command" |
 | SG304 | medium | External URL in install / prerequisite steps |
-| SG305 | medium | Oversized instruction file |
+| SG305 | high | Oversized instruction file |
 
 `skillguard rules` 会打印每条规则的说明和误报备注。
 

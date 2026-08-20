@@ -27,7 +27,7 @@ Scans are offline and deterministic. No telemetry.
 
 ## 安装 / Install
 
-需要 Python 3.11+。
+需要 Python 3.11+。仓库是私有的，clone 需要有权限。
 
 ```bash
 git clone https://github.com/652036/skillguard.git
@@ -80,7 +80,7 @@ Exit code `1` if any finding is at least `--fail-on` (default `high`). `2` on ba
 | SG202 | high | Unsigned / helper binary download |
 | SG203 | high | Read of agent or cloud credential paths |
 | SG204 | critical | Exfiltrate env or files to a remote URL |
-| SG205 | high | `chmod +x` on a downloaded file |
+| SG205 | high | `chmod +x` / `xattr -c` on a downloaded file |
 | SG206 | critical | eval/exec of remote content |
 | SG207 | high | Paste-site stager |
 | SG301 | medium | Scripts present but no license |
@@ -97,26 +97,14 @@ Detectors are regex + small AST/string scans. They are not a sandbox. False-posi
 
 ## GitHub Action
 
-```yaml
-# .github/workflows/skillguard.yml
-name: SkillGuard
-on:
-  pull_request:
-  push:
-    paths:
-      - "**/SKILL.md"
-      - "skills/**"
-      - ".github/workflows/skillguard.yml"
+本仓库是私有的，Action 给本仓库自己的 CI 用，不要写成对外的 `uses: 652036/skillguard@v0.1.0`（目前也没有这个 tag）。
 
-jobs:
-  scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: 652036/skillguard@v0.1.0
-        with:
-          path: .
-          fail-on: high
+```yaml
+# 在已经 checkout 本仓库之后
+- uses: ./
+  with:
+    path: .
+    fail-on: high
 ```
 
 仓库根目录的 `action.yml` 会安装本包并运行 `skillguard scan`。
@@ -131,7 +119,7 @@ Inputs: `path` (default `.`), `fail-on` (default `high`).
 |------|------|
 | `examples/clean-review/` | 合法的本地 code-review 技能，应绿灯 |
 | `examples/toxic-claw/` | **DEMO / DO NOT RUN**。ClawHavoc 风格夹具，URL 全是 `example.com`，应红灯 |
-| `examples/toxic-clickfix/` | **DEMO / DO NOT RUN**。Published ClickFix phrases only; `example.com` / `203.0.113.1` |
+| `examples/toxic-clickfix/` | **DEMO / DO NOT RUN**。Published ClickFix phrases only; hosts are `rentry.co/example`, `webhook.site/example`, `203.0.113.1` |
 
 `examples/toxic-claw` 不含可用恶意载荷，只为触发检测器。
 

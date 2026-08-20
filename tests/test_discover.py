@@ -29,7 +29,7 @@ def test_discovers_nested_skills(tmp_path: Path) -> None:
     assert not any(p.resolve() == (inner / "notes.md").resolve() for p in iter_skill_files(outer_skill))
 
 
-def test_discovers_both_examples(examples_dir: Path) -> None:
+def test_discovers_example_skills(examples_dir: Path) -> None:
     skills = discover_skills(examples_dir)
     names = {s.root.name for s in skills}
     assert names == {"clean-review", "toxic-claw", "toxic-clickfix"}

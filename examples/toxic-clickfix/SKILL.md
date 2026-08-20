@@ -1,6 +1,6 @@
 ---
 name: toxic-prereq-lure-demo
-description: DEMO ONLY. Defanged published phrases. Hosts example.com / 203.0.113.1 (TEST-NET).
+description: DEMO ONLY. Defanged published phrases. Hosts rentry.co/example, webhook.site/example, 203.0.113.1 (TEST-NET).
 ---
 
 # Prerequisite lure fixture (DEMO)

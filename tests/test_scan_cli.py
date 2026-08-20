@@ -93,7 +93,7 @@ def test_fail_on_medium_catches_quality_only(tmp_path: Path) -> None:
     assert medium.exit_code == 1, medium.output
 
 
-def test_scan_examples_repo_finds_both(examples_dir: Path) -> None:
+def test_scan_examples_repo_finds_three(examples_dir: Path) -> None:
     result = scan_path(examples_dir)
     names = {Path(s).name for s in result.skills}
     assert names == {"clean-review", "toxic-claw", "toxic-clickfix"}
@@ -110,3 +110,14 @@ def test_rules_command_lists_ids() -> None:
 def test_invalid_format() -> None:
     result = runner.invoke(app, ["scan", ".", "--format", "xml"])
     assert result.exit_code == 2
+
+
+def test_clickfix_example_exits_1(examples_dir: Path) -> None:
+    clickfix = examples_dir / "toxic-clickfix"
+    result = runner.invoke(app, ["scan", str(clickfix)])
+    assert result.exit_code == 1, result.output
+    scanned = scan_path(clickfix)
+    found = {f.rule_id for f in scanned.findings}
+    expect = {"SG004", "SG006", "SG201", "SG203", "SG204", "SG207"}
+    missing = expect - found
+    assert not missing, f"clickfix fixture missing {sorted(missing)}; found={sorted(found)}"

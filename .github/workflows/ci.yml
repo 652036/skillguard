@@ -28,5 +28,12 @@ jobs:
           code=$?
           set -e
           test "$code" -eq 1
+      - name: Clickfix example must fail
+        run: |
+          set +e
+          skillguard scan examples/toxic-clickfix --fail-on high
+          code=$?
+          set -e
+          test "$code" -eq 1
       - name: Rules command
         run: skillguard rules

@@ -8,6 +8,7 @@ from typing import Optional
 import typer
 
 from skillguard import __version__
+from skillguard.i18n import Lang, rule_display, t
 from skillguard.models import Severity, parse_severity
 from skillguard.report import render_json, render_text
 from skillguard.rules import list_rules
@@ -54,12 +55,23 @@ def scan(
         "--fail-on",
         help="Minimum severity that yields exit code 1: critical, high, medium, low.",
     ),
+    lang: str = typer.Option(
+        "en",
+        "--lang",
+        "-l",
+        help="Report language: en or zh.",
+    ),
 ) -> None:
     """Scan a skill directory, a repo of skills, or a SKILL.md file."""
     fmt = output_format.lower()
     if fmt not in {"text", "json"}:
         typer.echo("error: --format must be 'text' or 'json'", err=True)
         raise typer.Exit(code=2)
+    lang_norm = lang.lower().strip()
+    if lang_norm not in {"en", "zh"}:
+        typer.echo("error: --lang must be 'en' or 'zh'", err=True)
+        raise typer.Exit(code=2)
+    lang_typed: Lang = "zh" if lang_norm == "zh" else "en"  # type: ignore[assignment]
     try:
         threshold = parse_severity(fail_on)
     except ValueError as exc:
@@ -72,7 +84,10 @@ def scan(
         typer.echo(f"error: path not found: {exc}", err=True)
         raise typer.Exit(code=2) from exc
 
-    rendered = render_json(result) if fmt == "json" else render_text(result)
+    if fmt == "json":
+        rendered = render_json(result)
+    else:
+        rendered = render_text(result, lang=lang_typed)
     typer.echo(rendered, nl=False)
 
     if result.failing(threshold):
@@ -81,13 +96,28 @@ def scan(
 
 
 @app.command("rules")
-def rules_cmd() -> None:
+def rules_cmd(
+    lang: str = typer.Option(
+        "en",
+        "--lang",
+        "-l",
+        help="Language: en or zh.",
+    ),
+) -> None:
     """List built-in rules."""
-    typer.echo(f"{'ID':<8} {'SEV':<10} TITLE")
+    lang_norm = lang.lower().strip()
+    if lang_norm not in {"en", "zh"}:
+        typer.echo("error: --lang must be 'en' or 'zh'", err=True)
+        raise typer.Exit(code=2)
+    lang_typed: Lang = "zh" if lang_norm == "zh" else "en"  # type: ignore[assignment]
+
+    typer.echo(t("rules_header", lang_typed))
     typer.echo("-" * 72)
     for rule in list_rules():
-        typer.echo(f"{rule.id:<8} {rule.severity.value:<10} {rule.title}")
-        typer.echo(f"         {rule.description}")
-        typer.echo(f"         false positives: {rule.false_positives}")
+        title, description = rule_display(rule.id, rule.title, rule.description, lang_typed)
+        sev = rule.severity.value
+        typer.echo(f"{rule.id:<8} {sev:<10} {title}")
+        typer.echo(f"         {description}")
+        typer.echo(f"         {t('false_positives', lang_typed)}: {rule.false_positives}")
         typer.echo("")
     raise typer.Exit(code=0)

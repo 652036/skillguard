@@ -1,19 +1,21 @@
 # SkillGuard
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![CI](https://github.com/652036/skillguard/actions/workflows/ci.yml/badge.svg)](https://github.com/652036/skillguard/actions)
 
-**Agent Skills (`SKILL.md`) security & quality scanner.**  
+**Security and quality scanner for Agent Skills (`SKILL.md`).**  
 Offline · Deterministic · CI-ready · No telemetry
 
-扫描 Claude Code、Cursor、Codex 等宿主加载的 `SKILL.md` 技能包，在 merge 前把危险技能变成红灯。
+Scan skills used by Claude Code, Cursor, Codex, and similar agent hosts. Catch dangerous or low-quality skills **before** they are merged.
 
 ---
 
-## What & Why / 这是什么
+## Why SkillGuard?
 
-Agent Skills are just folders containing a `SKILL.md` plus optional scripts and resources. Hosts treat the skill body as **high-trust instructions**. An unaudited skill can:
+Agent Skills are ordinary folders containing a `SKILL.md` plus optional scripts and resources. Hosts treat the skill body as **high-trust instructions**. An unaudited skill can:
 
 - Override the system prompt (`ignore previous instructions`, fake `[SYSTEM]` / `<|im_start|>` markers)
 - Socially engineer the human into running `curl | bash` (ClawHavoc / ClickFix style attacks)
@@ -32,6 +34,7 @@ Requires Python 3.11+.
 
 ```bash
 pip install skillguard          # once published to PyPI
+
 # or from source:
 git clone https://github.com/652036/skillguard.git
 cd skillguard
@@ -58,13 +61,16 @@ skillguard rules                                 # list all built-in rules
 ```
 
 **Exit codes**
-- `0` — clean (no findings at or above `--fail-on`)
-- `1` — findings at or above the threshold
-- `2` — invalid arguments / path not found
+
+| Code | Meaning |
+|------|---------|
+| `0`  | Clean (no findings at or above `--fail-on`) |
+| `1`  | Findings at or above the threshold |
+| `2`  | Invalid arguments / path not found |
 
 ---
 
-## Rules / 规则
+## Rules
 
 | ID     | Severity  | Title |
 |--------|-----------|-------|
@@ -117,6 +123,7 @@ Or use the composite action from a checked-out copy:
 ```
 
 **Inputs**
+
 - `path` (default `.`) — skill directory, skills repo, or `SKILL.md`
 - `fail-on` (default `high`) — minimum severity that fails the job
 
@@ -127,7 +134,7 @@ Or use the composite action from a checked-out copy:
 | Path | Expected |
 |------|----------|
 | `examples/clean-review/` | Clean local code-review skill → should pass |
-| `examples/toxic-claw/` | **DEMO / DO NOT RUN** — ClawHavoc-style fixture (example.com only) → should fail |
+| `examples/toxic-claw/` | **DEMO / DO NOT RUN** — ClawHavoc-style fixture → should fail |
 | `examples/toxic-clickfix/` | **DEMO / DO NOT RUN** — ClickFix phrases only → should fail |
 
 The toxic examples contain **no live malicious payloads**; they exist solely to exercise the detectors.

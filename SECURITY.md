@@ -13,7 +13,7 @@ Please **do not** open a public GitHub issue for security vulnerabilities.
 Instead, please use one of the following:
 
 1. Open a **private security advisory** on GitHub (preferred).
-2. Contact the maintainers directly.
+2. Email the maintainer: **qq2535365189@gmail.com**
 
 We will acknowledge receipt within **48 hours** and aim to provide a status update or fix timeline for critical issues as quickly as possible.
 

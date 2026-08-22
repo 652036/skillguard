@@ -58,6 +58,10 @@ skillguard scan path/to/skill --fail-on high     # 默认
 skillguard scan path/to/skill --fail-on critical
 skillguard scan path/to/skill --fail-on medium
 
+# 中文报告
+skillguard scan path/to/skill --lang zh
+skillguard rules --lang zh
+
 skillguard rules                                 # 列出全部内置规则
 ```
 
@@ -73,31 +77,31 @@ skillguard rules                                 # 列出全部内置规则
 
 | ID     | 级别       | 标题 |
 |--------|------------|------|
-| SG001  | high       | Ignore-previous instruction hijack |
-| SG002  | critical   | Jailbreak / persona takeover |
-| SG003  | critical   | Fake system-role markers |
-| SG004  | high       | Disable-safety / suppress-warning |
-| SG005  | high       | Hidden instructions (HTML comment / zero-width) |
-| SG006  | critical   | Social-engineering the human (ClickFix / ClawHavoc) |
-| SG101  | critical   | AWS access key |
-| SG102  | critical   | Cloud / AI vendor token |
-| SG103  | critical   | Generic API key assignment |
-| SG104  | critical   | Private key PEM block |
-| SG105  | critical   | Committed `.env` secrets |
-| SG201  | critical   | Pipe remote script to a shell |
-| SG202  | high       | Unsigned / helper binary download |
-| SG203  | high       | Read of agent or cloud credential paths |
-| SG204  | critical   | Exfiltrate env or files to a remote URL |
-| SG205  | high       | `chmod +x` / `xattr -c` on a downloaded file |
-| SG206  | critical   | eval/exec of remote content |
-| SG207  | high       | Paste-site stager |
-| SG301  | medium     | Scripts present but no license |
-| SG302  | medium     | `SKILL.md` missing name or description |
-| SG303  | medium     | Overly broad "run any command" |
-| SG304  | medium     | External URL in install / prerequisite steps |
-| SG305  | high       | Oversized instruction file |
+| SG001  | high       | 忽略先前指令的劫持 |
+| SG002  | critical   | 越狱 / 人格接管 |
+| SG003  | critical   | 伪造系统角色标记 |
+| SG004  | high       | 关闭安全 / 抑制警告 |
+| SG005  | high       | 隐藏指令（HTML 注释 / 零宽字符） |
+| SG006  | critical   | 对人类的社交工程（ClickFix / ClawHavoc） |
+| SG101  | critical   | AWS 访问密钥 |
+| SG102  | critical   | 云 / AI 厂商令牌 |
+| SG103  | critical   | 通用 API 密钥赋值 |
+| SG104  | critical   | 私钥 PEM 块 |
+| SG105  | critical   | 提交的 .env 密钥 |
+| SG201  | critical   | 远程脚本管道到 shell |
+| SG202  | high       | 未签名 / 辅助二进制下载 |
+| SG203  | high       | 读取代理或云凭证路径 |
+| SG204  | critical   | 将环境或文件外传到远程 URL |
+| SG205  | high       | 对下载文件执行 chmod +x / xattr -c |
+| SG206  | critical   | eval/exec 远程内容 |
+| SG207  | high       | 粘贴站暂存器 |
+| SG301  | medium     | 有脚本但无许可证 |
+| SG302  | medium     | SKILL.md 缺少 name 或 description |
+| SG303  | medium     | 过于宽泛的「运行任意命令」 |
+| SG304  | medium     | 安装 / 前置步骤中的外部 URL |
+| SG305  | high       | 过大的指令文件 |
 
-运行 `skillguard rules` 可查看每条规则的详细说明和已知误报情况。
+运行 `skillguard rules --lang zh` 可查看每条规则的详细中文说明和已知误报情况。
 
 检测器基于正则 + 轻量字符串/AST 分析，**不是**沙箱。
 

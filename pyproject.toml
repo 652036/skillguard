@@ -15,15 +15,7 @@ authors = [
 maintainers = [
     { name = "chen c", email = "652036@users.noreply.github.com" },
 ]
-keywords = [
-    "agent-skills",
-    "security",
-    "sast",
-    "skill.md",
-    "cli",
-    "prompt-injection",
-    "claude-code",
-]
+keywords = ["agent-skills", "security", "sast", "skill.md", "cli", "prompt-injection"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
@@ -65,25 +57,16 @@ skillguard = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q --strict-markers"
+addopts = "-q"
 
 [tool.ruff]
-target-version = "py311"
 line-length = 100
+target-version = "py311"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = [
-    "E",   # pycodestyle errors
-    "F",   # pyflakes
-    "I",   # isort
-    "UP",  # pyupgrade
-    "B",   # flake8-bugbear
-    "SIM", # flake8-simplify
-]
-ignore = [
-    "E501",  # line length handled by formatter preference
-]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["skillguard"]
@@ -94,4 +77,7 @@ packages = ["skillguard"]
 strict = false
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = false
+
+[tool.coverage.run]
+source = ["skillguard"]
+branch = true

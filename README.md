@@ -1,15 +1,15 @@
 # SkillGuard
 
-[English](README.md) | [简体中文](README.zh-CN.md)
-
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![CI](https://github.com/652036/skillguard/actions/workflows/ci.yml/badge.svg)](https://github.com/652036/skillguard/actions)
+[![Status](https://img.shields.io/badge/status-alpha-orange.svg)]()
 
-**Security and quality scanner for Agent Skills (`SKILL.md`).**  
-Offline · Deterministic · CI-ready · No telemetry
+**[English](README.md)** | **[简体中文](README.zh-CN.md)**
 
-Scan skills used by Claude Code, Cursor, Codex, and similar agent hosts. Catch dangerous or low-quality skills **before** they are merged.
+**Agent Skills (`SKILL.md`) security & quality scanner.**  
+Offline · Deterministic · CI-friendly · No telemetry
+
+Scan `SKILL.md` skill packages used by Claude Code, Cursor, Codex and similar hosts. Fail the build when something toxic is about to land.
 
 ---
 
@@ -17,14 +17,14 @@ Scan skills used by Claude Code, Cursor, Codex, and similar agent hosts. Catch d
 
 Agent Skills are ordinary folders containing a `SKILL.md` plus optional scripts and resources. Hosts treat the skill body as **high-trust instructions**. An unaudited skill can:
 
-- Override the system prompt (`ignore previous instructions`, fake `[SYSTEM]` / `<|im_start|>` markers)
-- Socially engineer the human into running `curl | bash` (ClawHavoc / ClickFix style attacks)
+- Override system prompts (“ignore previous instructions”, fake `[SYSTEM]` / `<|im_start|>` markers)
+- Social-engineer the human into pasting `curl | bash` (ClawHavoc / ClickFix style attacks)
 - Read credential paths (`~/.ssh`, `~/.claude`, `~/.codex`, `~/.cursor`, `.env`) and exfiltrate them
-- Ship secrets or private keys into the repository
+- Ship secrets and private keys into the repository
 
-SkillGuard turns these problems into CI failures **before** they land.
+SkillGuard turns these problems into hard CI failures **before** they merge.
 
-Scans are **completely offline and deterministic**. No network access, no telemetry.
+Scans never touch the network. Results are fully reproducible. No telemetry.
 
 ---
 
@@ -33,9 +33,10 @@ Scans are **completely offline and deterministic**. No network access, no teleme
 Requires Python 3.11+.
 
 ```bash
-pip install skillguard          # once published to PyPI
+# Once published to PyPI
+pip install skillguard
 
-# or from source:
+# Or from source
 git clone https://github.com/652036/skillguard.git
 cd skillguard
 python3 -m venv .venv && source .venv/bin/activate
@@ -47,10 +48,10 @@ pip install -e ".[dev]"
 ## Usage
 
 ```bash
-# Scan a single skill, a repo of skills, or a lone SKILL.md
+# Scan a single skill, a directory of skills, or a SKILL.md file
 skillguard scan examples/clean-review          # should pass (exit 0)
 skillguard scan examples/toxic-claw            # should fail (exit 1)
-skillguard scan examples/                      # discovers multiple skills
+skillguard scan examples/                       # discovers multiple skills
 
 skillguard scan path/to/skill --format json
 skillguard scan path/to/skill --fail-on high     # default
@@ -62,11 +63,9 @@ skillguard rules                                 # list all built-in rules
 
 **Exit codes**
 
-| Code | Meaning |
-|------|---------|
-| `0`  | Clean (no findings at or above `--fail-on`) |
-| `1`  | Findings at or above the threshold |
-| `2`  | Invalid arguments / path not found |
+- `0` — clean (no findings at or above the threshold)
+- `1` — findings ≥ `--fail-on` severity
+- `2` — invalid arguments / path errors
 
 ---
 
@@ -98,22 +97,22 @@ skillguard rules                                 # list all built-in rules
 | SG304  | medium    | External URL in install / prerequisite steps |
 | SG305  | high      | Oversized instruction file |
 
-Run `skillguard rules` for full descriptions and false-positive notes.
+Run `skillguard rules` for full descriptions and known false-positive notes.
 
-Detectors use regex + lightweight string/AST analysis. They are **not** a sandbox.
+Detectors are regex + lightweight string/AST checks. They are **not** a sandbox.
 
 ---
 
 ## GitHub Action
 
 ```yaml
-- uses: 652036/skillguard@v0.1.0   # or @main
+- uses: 652036/skillguard@v0.1.0   # after first release tag
   with:
     path: .
     fail-on: high
 ```
 
-Or use the composite action from a checked-out copy:
+Or from a checked-out copy of this repository:
 
 ```yaml
 - uses: ./
@@ -124,8 +123,8 @@ Or use the composite action from a checked-out copy:
 
 **Inputs**
 
-- `path` (default `.`) — skill directory, skills repo, or `SKILL.md`
-- `fail-on` (default `high`) — minimum severity that fails the job
+- `path` (default `.`) — skill directory, skills repo, or a `SKILL.md` file
+- `fail-on` (default `high`) — minimum severity that fails the job (`critical` | `high` | `medium` | `low`)
 
 ---
 
@@ -133,11 +132,11 @@ Or use the composite action from a checked-out copy:
 
 | Path | Expected |
 |------|----------|
-| `examples/clean-review/` | Clean local code-review skill → should pass |
-| `examples/toxic-claw/` | **DEMO / DO NOT RUN** — ClawHavoc-style fixture → should fail |
-| `examples/toxic-clickfix/` | **DEMO / DO NOT RUN** — ClickFix phrases only → should fail |
+| `examples/clean-review/` | Legitimate local code-review skill → should pass |
+| `examples/toxic-claw/` | **DEMO / DO NOT RUN**. ClawHavoc-style fixture → should fail |
+| `examples/toxic-clickfix/` | **DEMO / DO NOT RUN**. ClickFix phrases → should fail |
 
-The toxic examples contain **no live malicious payloads**; they exist solely to exercise the detectors.
+The toxic examples contain **no live malicious payloads**; they exist only to exercise the detectors.
 
 ---
 
@@ -146,6 +145,7 @@ The toxic examples contain **no live malicious payloads**; they exist solely to 
 ```bash
 pip install -e ".[dev]"
 pytest -q
+ruff check src tests
 skillguard scan examples/
 ```
 
@@ -161,4 +161,13 @@ Please report vulnerabilities privately. See [SECURITY.md](SECURITY.md).
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE).
+Apache License 2.0. See [LICENSE](LICENSE).
+
+---
+
+## Roadmap
+
+- More detectors and reduced false positives
+- Configurable rule enable/disable
+- SARIF / richer reporting formats
+- The core offline scanner will always remain free and open-source

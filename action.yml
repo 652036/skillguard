@@ -14,6 +14,14 @@ inputs:
     description: Minimum severity that fails the job (critical, high, medium, low)
     required: false
     default: "high"
+  disable:
+    description: Comma-separated rule ids to skip (e.g. SG301,SG304)
+    required: false
+    default: ""
+  enable:
+    description: Allow-list of rule ids (comma-separated). Empty means all rules.
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -27,4 +35,8 @@ runs:
       run: pip install -e "${{ github.action_path }}"
     - name: Scan skills
       shell: bash
-      run: skillguard scan "${{ inputs.path }}" --fail-on "${{ inputs.fail-on }}"
+      run: |
+        extra=()
+        if [ -n "${{ inputs.disable }}" ]; then extra+=(--disable "${{ inputs.disable }}"); fi
+        if [ -n "${{ inputs.enable }}" ]; then extra+=(--enable "${{ inputs.enable }}"); fi
+        skillguard scan "${{ inputs.path }}" --fail-on "${{ inputs.fail-on }}" "${extra[@]}"

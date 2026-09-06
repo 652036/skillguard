@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Rule enable/disable: `--disable` / `--enable` plus `skillguard.toml` or `.skillguard.yml`
 - Open-source preparation docs (CONTRIBUTING, SECURITY, CHANGELOG)
 - Polished README for public release
 - SARIF 2.1.0 output (`skillguard scan --format sarif`) for GitHub code scanning

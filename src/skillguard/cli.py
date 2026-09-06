@@ -8,6 +8,7 @@ from typing import Optional
 import typer
 
 from skillguard import __version__
+from skillguard.config import resolve_filter
 from skillguard.i18n import Lang, rule_display, t
 from skillguard.models import parse_severity
 from skillguard.report import render_json, render_sarif, render_text
@@ -61,6 +62,16 @@ def scan(
         "-l",
         help="Report language: en or zh.",
     ),
+    disable: str = typer.Option(
+        "",
+        "--disable",
+        help="Comma-separated rule ids to skip (e.g. SG301,SG304). Merges with skillguard.toml.",
+    ),
+    enable: str = typer.Option(
+        "",
+        "--enable",
+        help="Allow-list: only run these rule ids. Overrides config enable if set.",
+    ),
 ) -> None:
     """Scan a skill directory, a repo of skills, or a SKILL.md file."""
     fmt = output_format.lower()
@@ -79,7 +90,13 @@ def scan(
         raise typer.Exit(code=2) from exc
 
     try:
-        result = scan_path(path)
+        rule_filter = resolve_filter(start=path, disable_cli=disable, enable_cli=enable)
+    except ValueError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+
+    try:
+        result = scan_path(path, rule_filter=rule_filter)
     except FileNotFoundError as exc:
         typer.echo(f"error: path not found: {exc}", err=True)
         raise typer.Exit(code=2) from exc

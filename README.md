@@ -58,9 +58,25 @@ skillguard scan path/to/skill --format sarif
 skillguard scan path/to/skill --fail-on high     # default
 skillguard scan path/to/skill --fail-on critical
 skillguard scan path/to/skill --fail-on medium
+skillguard scan path/to/skill --disable SG301,SG304
+skillguard scan path/to/skill --enable SG001,SG201   # allow-list
 
 skillguard rules                                 # list all built-in rules
 ```
+
+**Rule filter**
+
+CLI `--disable` / `--enable` combine with an optional config file walked upward from the scan path:
+
+- `skillguard.toml` / `.skillguard.toml`
+- `.skillguard.yml` / `skillguard.yml`
+
+```toml
+disable = ["SG301", "SG304"]
+# enable = ["SG001", "SG201"]   # optional allow-list
+```
+
+`--disable` merges with the file. `--enable` replaces a file `enable` list. Unknown ids exit 2. `skillguard rules` still lists the full built-in set.
 
 **Exit codes**
 

@@ -54,6 +54,7 @@ skillguard scan examples/toxic-claw            # should fail (exit 1)
 skillguard scan examples/                       # discovers multiple skills
 
 skillguard scan path/to/skill --format json
+skillguard scan path/to/skill --format sarif
 skillguard scan path/to/skill --fail-on high     # default
 skillguard scan path/to/skill --fail-on critical
 skillguard scan path/to/skill --fail-on medium
@@ -126,6 +127,42 @@ Or from a checked-out copy of this repository:
 - `path` (default `.`) — skill directory, skills repo, or a `SKILL.md` file
 - `fail-on` (default `high`) — minimum severity that fails the job (`critical` | `high` | `medium` | `low`)
 
+### GitHub code scanning (SARIF)
+
+Upload SkillGuard findings to [GitHub code scanning](https://docs.github.com/en/code-security/code-scanning):
+
+```yaml
+name: SkillGuard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install skillguard
+      - name: Scan skills
+        run: skillguard scan . --format sarif > skillguard.sarif
+        continue-on-error: true
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: skillguard.sarif
+```
+
+`--format sarif` writes SARIF 2.1.0. `continue-on-error: true` lets the upload step run even when findings fail the scan (exit `1`).
+
 ---
 
 ## Examples
@@ -169,5 +206,4 @@ Apache License 2.0. See [LICENSE](LICENSE).
 
 - More detectors and reduced false positives
 - Configurable rule enable/disable
-- SARIF / richer reporting formats
 - The core offline scanner will always remain free and open-source

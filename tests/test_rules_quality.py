@@ -46,6 +46,34 @@ def test_scripts_without_license(tmp_path: Path) -> None:
     assert any(f.rule_id == "SG301" for f in findings)
 
 
+def test_bat_scripts_without_license(tmp_path: Path) -> None:
+    skill_md = tmp_path / "SKILL.md"
+    skill_md.write_text("---\nname: x\ndescription: y\n---\n", encoding="utf-8")
+    script = tmp_path / "install.bat"
+    script.write_text("@echo off\necho hi\n", encoding="utf-8")
+    skill = SkillRoot(root=tmp_path, skill_md=skill_md)
+    findings = check_skill_quality(
+        skill,
+        [skill_md, script],
+        {skill_md: skill_md.read_text(encoding="utf-8")},
+    )
+    assert any(f.rule_id == "SG301" for f in findings)
+
+
+def test_cmd_scripts_without_license(tmp_path: Path) -> None:
+    skill_md = tmp_path / "SKILL.md"
+    skill_md.write_text("---\nname: x\ndescription: y\n---\n", encoding="utf-8")
+    script = tmp_path / "setup.cmd"
+    script.write_text("@echo off\necho hi\n", encoding="utf-8")
+    skill = SkillRoot(root=tmp_path, skill_md=skill_md)
+    findings = check_skill_quality(
+        skill,
+        [skill_md, script],
+        {skill_md: skill_md.read_text(encoding="utf-8")},
+    )
+    assert any(f.rule_id == "SG301" for f in findings)
+
+
 def test_scripts_with_license_ok(tmp_path: Path) -> None:
     skill_md = tmp_path / "SKILL.md"
     skill_md.write_text("---\nname: x\ndescription: y\n---\n", encoding="utf-8")
@@ -74,4 +102,3 @@ def test_oversized_instruction_file(tmp_path: Path) -> None:
         {skill_md: skill_md.read_text(encoding="utf-8")},
     )
     assert any(f.rule_id == "SG305" for f in findings)
-

@@ -39,6 +39,8 @@ SCAN_SUFFIXES = {
     ".tsx",
     ".ps1",
     ".psm1",
+    ".bat",
+    ".cmd",
     ".env",
     ".yml",
     ".yaml",

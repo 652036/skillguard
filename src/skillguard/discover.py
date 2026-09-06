@@ -57,6 +57,7 @@ SCAN_FILENAMES = {
     "skill.md",
     "agents.md",
     "claude.md",
+    "gemini.md",
     ".cursorrules",
     "license",
     "license.txt",
@@ -68,8 +69,12 @@ SCAN_FILENAMES = {
     ".env.example",
 }
 
-HOST_INSTRUCTION_NAMES = frozenset({"agents.md", "claude.md", ".cursorrules"})
+HOST_INSTRUCTION_NAMES = frozenset({"agents.md", "claude.md", "gemini.md", ".cursorrules"})
 HOST_INSTRUCTION_SUFFIXES = frozenset({".md", ".markdown", ".mdc", ".txt"})
+HOST_WALK_HIDDEN_DIRS = {
+    ".cursor": frozenset({"rules"}),
+    ".github": frozenset({"instructions"}),
+}
 
 SCAN_HIDDEN_DIRS = {".ssh", ".aws"}
 SCAN_CREDENTIAL_NAMES = {
@@ -85,8 +90,10 @@ class SkillRoot:
     """A directory that contains (or is treated as) one Agent Skill.
 
     ``host_only`` roots are host instruction files (AGENTS.md, CLAUDE.md,
-    ``.cursorrules``, ``.cursor/rules``) that sit outside any SKILL.md
-    package. They are scanned for prompt-injection but are not skills.
+    GEMINI.md, ``.cursorrules``, ``.cursor/rules``, GitHub Copilot
+    ``.github/copilot-instructions.md`` / ``.github/instructions``) that sit
+    outside any SKILL.md package. They are scanned for prompt-injection but
+    are not skills.
     """
 
     root: Path
@@ -103,8 +110,9 @@ def discover_skills(path: Path) -> list[SkillRoot]:
 
     * A ``SKILL.md`` file → that file's parent is the skill root.
     * A directory → every nested ``SKILL.md`` is a skill.
-    * Host instruction files (``AGENTS.md``, ``CLAUDE.md``, ``.cursorrules``,
-      ``.cursor/rules``) outside those packages are still scanned, so a
+    * Host instruction files (``AGENTS.md``, ``CLAUDE.md``, ``GEMINI.md``,
+      ``.cursorrules``, ``.cursor/rules``, ``.github/copilot-instructions.md``,
+      ``.github/instructions``) outside those packages are still scanned, so a
       skills repo's root agent files are not skipped.
     * A directory with no ``SKILL.md`` is still scanned as one loose skill
       so a single folder of scripts is not silently skipped.
@@ -195,10 +203,10 @@ def iter_skill_files(skill: SkillRoot, scan_target: Path | None = None) -> list[
 
 
 def is_host_instruction_file(path: Path) -> bool:
-    """True for AGENTS.md, CLAUDE.md, .cursorrules, and .cursor/rules files."""
+    """True for AGENTS.md, CLAUDE.md, GEMINI.md, Cursor, and Copilot files."""
     if path.name.lower() in HOST_INSTRUCTION_NAMES:
         return True
-    return _is_cursor_rule_file(path)
+    return _is_cursor_rule_file(path) or _is_github_copilot_file(path)
 
 
 def host_instruction_files(root: Path) -> list[Path]:
@@ -216,16 +224,16 @@ def host_instruction_files(root: Path) -> list[Path]:
 
 def _host_walk_dirnames(dirpath: Path, dirnames: list[str]) -> list[str]:
     allowed: list[str] = []
-    in_cursor = dirpath.name.lower() == ".cursor"
+    nested_allow = HOST_WALK_HIDDEN_DIRS.get(dirpath.name.lower())
     for name in dirnames:
         if name in SKIP_DIR_NAMES:
             continue
         lowered = name.lower()
-        if in_cursor:
-            if lowered == "rules":
+        if nested_allow is not None:
+            if lowered in nested_allow:
                 allowed.append(name)
             continue
-        if name.startswith(".") and lowered != ".cursor":
+        if name.startswith(".") and lowered not in HOST_WALK_HIDDEN_DIRS:
             continue
         allowed.append(name)
     return allowed
@@ -240,6 +248,20 @@ def _is_cursor_rule_file(path: Path) -> bool:
     if idx + 2 >= len(parts) or parts[idx + 1] != "rules":
         return False
     return path.suffix.lower() in HOST_INSTRUCTION_SUFFIXES
+
+
+def _is_github_copilot_file(path: Path) -> bool:
+    parts = [part.lower() for part in path.parts]
+    try:
+        idx = parts.index(".github")
+    except ValueError:
+        return False
+    rest = parts[idx + 1 :]
+    if rest == ["copilot-instructions.md"]:
+        return True
+    if len(rest) >= 2 and rest[0] == "instructions":
+        return path.suffix.lower() in HOST_INSTRUCTION_SUFFIXES
+    return False
 
 
 def _path_under_any(path: Path, roots: set[Path]) -> bool:

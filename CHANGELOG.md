@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Polished README for public release
 - Scan Windows `.bat` / `.cmd` skill scripts (discovery, shell role, SG301)
 - Scan host instruction files (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.cursor/rules`) even when nested `SKILL.md` packages exist
+- Scan Gemini (`GEMINI.md`) and GitHub Copilot (`.github/copilot-instructions.md`, `.github/instructions/*.md`) host instruction files even when nested `SKILL.md` packages exist
 
 ## [0.1.2] - 2026-09-06
 

@@ -11,7 +11,7 @@
 
 扫描 Claude Code、Cursor、Codex 等宿主加载的 `SKILL.md` 技能包，在 merge 前把危险内容变成红灯。
 
-扫描仓库时也会覆盖宿主指令文件（`AGENTS.md`、`CLAUDE.md`、`.cursorrules`、`.cursor/rules`），即使已有嵌套的 `SKILL.md` 技能包，也不会漏掉这些文件里的提示注入。发现过程只走本地文件系统，扫描器不访问网络。
+扫描仓库时也会覆盖宿主指令文件（`AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`.cursorrules`、`.cursor/rules`、`.github/copilot-instructions.md`、`.github/instructions`），即使已有嵌套的 `SKILL.md` 技能包，也不会漏掉这些文件里的提示注入。发现过程只走本地文件系统，扫描器不访问网络。
 
 ---
 
@@ -51,7 +51,7 @@ pip install -e ".[dev]"
 
 ```bash
 # 扫描一个技能、一个技能目录、单份 SKILL.md，或整个仓库
-#（嵌套技能 + 根目录 AGENTS.md / CLAUDE.md / Cursor 规则）
+#（嵌套技能 + 根目录 AGENTS.md / CLAUDE.md / GEMINI.md / Cursor 规则 / GitHub Copilot）
 skillguard scan examples/clean-review          # 应通过，exit 0
 skillguard scan examples/toxic-claw            # 应失败，exit 1
 skillguard scan examples/                       # 发现多份技能

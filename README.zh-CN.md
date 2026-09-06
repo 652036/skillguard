@@ -54,6 +54,7 @@ skillguard scan examples/toxic-claw            # 应失败，exit 1
 skillguard scan examples/                       # 发现多份技能
 
 skillguard scan path/to/skill --format json
+skillguard scan path/to/skill --format sarif
 skillguard scan path/to/skill --fail-on high     # 默认
 skillguard scan path/to/skill --fail-on critical
 skillguard scan path/to/skill --fail-on medium
@@ -130,6 +131,42 @@ skillguard rules                                 # 列出全部内置规则
 - `path`（默认 `.`）— 技能目录、技能仓库或 `SKILL.md` 文件
 - `fail-on`（默认 `high`）— 使任务失败的最低严重级别（`critical` | `high` | `medium` | `low`）
 
+### GitHub code scanning（SARIF）
+
+将 SkillGuard 结果上传到 [GitHub code scanning](https://docs.github.com/zh/code-security/code-scanning)：
+
+```yaml
+name: SkillGuard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install skillguard
+      - name: Scan skills
+        run: skillguard scan . --format sarif > skillguard.sarif
+        continue-on-error: true
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: skillguard.sarif
+```
+
+`--format sarif` 输出 SARIF 2.1.0。`continue-on-error: true` 确保即使扫描因 finding 以退出码 `1` 失败，仍会上传报告。
+
 ---
 
 ## 示例
@@ -173,5 +210,4 @@ Apache License 2.0。详见 [LICENSE](LICENSE)。
 
 - 更多检测器，降低误报
 - 可配置规则开关
-- SARIF / 更丰富的报告格式
 - 核心离线扫描器将始终保持免费开源

@@ -59,6 +59,20 @@ def test_json_format_is_valid(toxic_skill: Path) -> None:
     assert {row["rule_id"] for row in payload["findings"]} >= {"SG001", "SG201"}
 
 
+def test_sarif_format_is_valid(toxic_skill: Path) -> None:
+    result = runner.invoke(app, ["scan", str(toxic_skill), "--format", "sarif"])
+    assert result.exit_code == 1, result.output
+    payload = json.loads(result.output)
+    assert payload["$schema"] == "https://json.schemastore.org/sarif-2.1.0.json"
+    assert payload["version"] == "2.1.0"
+    runs = payload["runs"]
+    assert len(runs) == 1
+    assert runs[0]["tool"]["driver"]["name"] == "SkillGuard"
+    sarif_results = runs[0]["results"]
+    assert sarif_results
+    assert {row["ruleId"] for row in sarif_results} >= {"SG001", "SG201"}
+
+
 def test_fail_on_critical_vs_high(tmp_path: Path) -> None:
     # High-only skill: jailbreak-adjacent ignore-previous (SG001 is high, not critical).
     high_only = tmp_path / "high-only"
@@ -110,6 +124,14 @@ def test_rules_command_lists_ids() -> None:
 def test_invalid_format() -> None:
     result = runner.invoke(app, ["scan", ".", "--format", "xml"])
     assert result.exit_code == 2
+    assert "sarif" in result.output.lower()
+
+
+def test_sarif_format_is_case_insensitive(toxic_skill: Path) -> None:
+    result = runner.invoke(app, ["scan", str(toxic_skill), "--format", "SARIF"])
+    assert result.exit_code == 1, result.output
+    payload = json.loads(result.output)
+    assert payload["version"] == "2.1.0"
 
 
 def test_clickfix_example_exits_1(examples_dir: Path) -> None:

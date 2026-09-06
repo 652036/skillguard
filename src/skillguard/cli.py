@@ -9,8 +9,8 @@ import typer
 
 from skillguard import __version__
 from skillguard.i18n import Lang, rule_display, t
-from skillguard.models import Severity, parse_severity
-from skillguard.report import render_json, render_text
+from skillguard.models import parse_severity
+from skillguard.report import render_json, render_sarif, render_text
 from skillguard.rules import list_rules
 from skillguard.scan import scan_path
 
@@ -48,7 +48,7 @@ def scan(
         "text",
         "--format",
         "-f",
-        help="Output format: text or json.",
+        help="Output format: text, json, or sarif.",
     ),
     fail_on: str = typer.Option(
         "high",
@@ -64,8 +64,8 @@ def scan(
 ) -> None:
     """Scan a skill directory, a repo of skills, or a SKILL.md file."""
     fmt = output_format.lower()
-    if fmt not in {"text", "json"}:
-        typer.echo("error: --format must be 'text' or 'json'", err=True)
+    if fmt not in {"text", "json", "sarif"}:
+        typer.echo("error: --format must be 'text', 'json', or 'sarif'", err=True)
         raise typer.Exit(code=2)
     lang_norm = lang.lower().strip()
     if lang_norm not in {"en", "zh"}:
@@ -86,6 +86,8 @@ def scan(
 
     if fmt == "json":
         rendered = render_json(result)
+    elif fmt == "sarif":
+        rendered = render_sarif(result)
     else:
         rendered = render_text(result, lang=lang_typed)
     typer.echo(rendered, nl=False)

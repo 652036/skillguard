@@ -120,7 +120,7 @@ def file_roles(path: Path) -> set[str]:
     roles = {"text"}
     if name.upper() == "SKILL.MD":
         roles.update({"skill_md", "markdown"})
-    if suffix in {".md", ".markdown"}:
+    if suffix in {".md", ".markdown", ".mdc"}:
         roles.add("markdown")
     if suffix in {".py"}:
         roles.update({"script", "python"})

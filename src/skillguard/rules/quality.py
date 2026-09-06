@@ -128,6 +128,10 @@ _OVERSIZE_BYTES = 1_000_000
 
 def check_skill_quality(skill: SkillRoot, files: list[Path], contents: dict[Path, str]) -> list[Finding]:
     findings: list[Finding] = []
+    if skill.host_only:
+        # Host instruction files are not Agent Skills — skip SG301/SG302.
+        findings.extend(_oversized_instruction_files(files))
+        return findings
     findings.extend(_missing_frontmatter(skill, contents))
     findings.extend(_scripts_without_license(skill, files))
     findings.extend(_oversized_instruction_files(files))

@@ -90,6 +90,14 @@ def test_scripts_with_license_ok(tmp_path: Path) -> None:
     assert not any(f.rule_id == "SG301" for f in findings)
 
 
+def test_host_only_root_skips_missing_skill_md(tmp_path: Path) -> None:
+    agents = tmp_path / "AGENTS.md"
+    agents.write_text("# host notes\n", encoding="utf-8")
+    skill = SkillRoot(root=tmp_path, skill_md=None, host_only=True)
+    findings = check_skill_quality(skill, [agents], {agents: agents.read_text(encoding="utf-8")})
+    assert not any(f.rule_id in {"SG301", "SG302"} for f in findings)
+
+
 def test_oversized_instruction_file(tmp_path: Path) -> None:
     skill_md = tmp_path / "SKILL.md"
     skill_md.write_text("---\nname: x\ndescription: y\n---\n", encoding="utf-8")

@@ -11,6 +11,8 @@ Offline · Deterministic · CI-friendly · No telemetry
 
 Scan `SKILL.md` skill packages used by Claude Code, Cursor, Codex and similar hosts. Fail the build when something toxic is about to land.
 
+A repo scan also covers host instruction files (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.cursor/rules`) even when nested `SKILL.md` packages exist, so prompt-injection in those files is not skipped. Discovery stays local — the scanner never touches the network.
+
 ---
 
 ## Why SkillGuard?
@@ -48,10 +50,12 @@ pip install -e ".[dev]"
 ## Usage
 
 ```bash
-# Scan a single skill, a directory of skills, or a SKILL.md file
+# Scan a single skill, a directory of skills, a SKILL.md file, or a repo
+# (nested skills + root AGENTS.md / CLAUDE.md / Cursor rules)
 skillguard scan examples/clean-review          # should pass (exit 0)
 skillguard scan examples/toxic-claw            # should fail (exit 1)
 skillguard scan examples/                       # discovers multiple skills
+skillguard scan .                               # skills plus host instruction files
 
 skillguard scan path/to/skill --format json
 skillguard scan path/to/skill --format sarif

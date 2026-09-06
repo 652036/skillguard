@@ -25,6 +25,7 @@ SKIP_DIR_NAMES = {
 SCAN_SUFFIXES = {
     ".md",
     ".markdown",
+    ".mdc",
     ".txt",
     ".rst",
     ".py",
@@ -54,6 +55,9 @@ SCAN_SUFFIXES = {
 
 SCAN_FILENAMES = {
     "skill.md",
+    "agents.md",
+    "claude.md",
+    ".cursorrules",
     "license",
     "license.txt",
     "license.md",
@@ -63,6 +67,9 @@ SCAN_FILENAMES = {
     ".env.local",
     ".env.example",
 }
+
+HOST_INSTRUCTION_NAMES = frozenset({"agents.md", "claude.md", ".cursorrules"})
+HOST_INSTRUCTION_SUFFIXES = frozenset({".md", ".markdown", ".mdc", ".txt"})
 
 SCAN_HIDDEN_DIRS = {".ssh", ".aws"}
 SCAN_CREDENTIAL_NAMES = {
@@ -75,10 +82,16 @@ MAX_FILE_BYTES = 1_000_000
 
 @dataclass(frozen=True)
 class SkillRoot:
-    """A directory that contains (or is treated as) one Agent Skill."""
+    """A directory that contains (or is treated as) one Agent Skill.
+
+    ``host_only`` roots are host instruction files (AGENTS.md, CLAUDE.md,
+    ``.cursorrules``, ``.cursor/rules``) that sit outside any SKILL.md
+    package. They are scanned for prompt-injection but are not skills.
+    """
 
     root: Path
     skill_md: Path | None
+    host_only: bool = False
 
     @property
     def label(self) -> str:
@@ -86,10 +99,13 @@ class SkillRoot:
 
 
 def discover_skills(path: Path) -> list[SkillRoot]:
-    """Find skill packages under ``path``.
+    """Find skill packages and uncovered host instruction files under ``path``.
 
     * A ``SKILL.md`` file → that file's parent is the skill root.
     * A directory → every nested ``SKILL.md`` is a skill.
+    * Host instruction files (``AGENTS.md``, ``CLAUDE.md``, ``.cursorrules``,
+      ``.cursor/rules``) outside those packages are still scanned, so a
+      skills repo's root agent files are not skipped.
     * A directory with no ``SKILL.md`` is still scanned as one loose skill
       so a single folder of scripts is not silently skipped.
     * Any other file is scanned as a one-file skill.
@@ -98,7 +114,13 @@ def discover_skills(path: Path) -> list[SkillRoot]:
     if path.is_file():
         if path.name.upper() == "SKILL.MD":
             return [SkillRoot(root=path.parent, skill_md=path)]
-        return [SkillRoot(root=path.parent, skill_md=None)]
+        return [
+            SkillRoot(
+                root=path.parent,
+                skill_md=None,
+                host_only=is_host_instruction_file(path),
+            )
+        ]
 
     if not path.is_dir():
         raise FileNotFoundError(path)
@@ -106,10 +128,16 @@ def discover_skills(path: Path) -> list[SkillRoot]:
     found: list[SkillRoot] = []
     for skill_md in _walk_skill_md(path):
         found.append(SkillRoot(root=skill_md.parent, skill_md=skill_md))
-    found.sort(key=lambda s: str(s.root))
-    if found:
-        return found
-    return [SkillRoot(root=path, skill_md=None)]
+    if not found:
+        return [SkillRoot(root=path, skill_md=None)]
+    skill_roots = {item.root.resolve() for item in found}
+    uncovered_hosts = [
+        host for host in host_instruction_files(path) if not _path_under_any(host, skill_roots)
+    ]
+    if uncovered_hosts:
+        found.append(SkillRoot(root=path, skill_md=None, host_only=True))
+    found.sort(key=lambda s: (s.host_only, str(s.root).lower()))
+    return found
 
 
 def _walk_skill_md(root: Path) -> list[Path]:
@@ -130,8 +158,17 @@ def iter_skill_files(skill: SkillRoot, scan_target: Path | None = None) -> list[
     nested_roots = {
         other.root.resolve()
         for other in discover_skills(skill.root)
-        if other.root.resolve() != skill.root.resolve()
+        if other.root.resolve() != skill.root.resolve() and not other.host_only
     }
+    if skill.host_only:
+        files = [
+            host
+            for host in host_instruction_files(skill.root)
+            if not _path_under_any(host, nested_roots)
+        ]
+        files.sort()
+        return files
+
     files: list[Path] = []
     for dirpath, dirnames, filenames in _walk(skill.root):
         resolved = dirpath.resolve()
@@ -146,8 +183,68 @@ def iter_skill_files(skill: SkillRoot, scan_target: Path | None = None) -> list[
             candidate = dirpath / name
             if _should_scan_file(candidate):
                 files.append(candidate)
+    seen = {path.resolve() for path in files}
+    for host in host_instruction_files(skill.root):
+        resolved = host.resolve()
+        if resolved in seen or _path_under_any(host, nested_roots):
+            continue
+        files.append(host)
+        seen.add(resolved)
     files.sort()
     return files
+
+
+def is_host_instruction_file(path: Path) -> bool:
+    """True for AGENTS.md, CLAUDE.md, .cursorrules, and .cursor/rules files."""
+    if path.name.lower() in HOST_INSTRUCTION_NAMES:
+        return True
+    return _is_cursor_rule_file(path)
+
+
+def host_instruction_files(root: Path) -> list[Path]:
+    """Locate host instruction files under ``root`` (offline filesystem walk)."""
+    matches: list[Path] = []
+    for dirpath, dirnames, filenames in _walk(root):
+        dirnames[:] = _host_walk_dirnames(dirpath, dirnames)
+        for name in filenames:
+            candidate = dirpath / name
+            if is_host_instruction_file(candidate):
+                matches.append(candidate)
+    matches.sort()
+    return matches
+
+
+def _host_walk_dirnames(dirpath: Path, dirnames: list[str]) -> list[str]:
+    allowed: list[str] = []
+    in_cursor = dirpath.name.lower() == ".cursor"
+    for name in dirnames:
+        if name in SKIP_DIR_NAMES:
+            continue
+        lowered = name.lower()
+        if in_cursor:
+            if lowered == "rules":
+                allowed.append(name)
+            continue
+        if name.startswith(".") and lowered != ".cursor":
+            continue
+        allowed.append(name)
+    return allowed
+
+
+def _is_cursor_rule_file(path: Path) -> bool:
+    parts = [part.lower() for part in path.parts]
+    try:
+        idx = parts.index(".cursor")
+    except ValueError:
+        return False
+    if idx + 2 >= len(parts) or parts[idx + 1] != "rules":
+        return False
+    return path.suffix.lower() in HOST_INSTRUCTION_SUFFIXES
+
+
+def _path_under_any(path: Path, roots: set[Path]) -> bool:
+    resolved = path.resolve()
+    return any(resolved == root or root in resolved.parents for root in roots)
 
 
 def _should_scan_file(path: Path) -> bool:

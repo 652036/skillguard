@@ -58,6 +58,8 @@ skillguard scan path/to/skill --format sarif
 skillguard scan path/to/skill --fail-on high     # 默认
 skillguard scan path/to/skill --fail-on critical
 skillguard scan path/to/skill --fail-on medium
+skillguard scan path/to/skill --disable SG301,SG304
+skillguard scan path/to/skill --enable SG001,SG201   # 只跑这些规则
 
 # 中文报告
 skillguard scan path/to/skill --lang zh
@@ -65,6 +67,10 @@ skillguard rules --lang zh
 
 skillguard rules                                 # 列出全部内置规则
 ```
+
+**规则开关**
+
+`--disable` / `--enable` 会与从扫描路径向上查找的配置文件合并：`skillguard.toml`、`.skillguard.yml`。`--disable` 与文件合并，`--enable` 覆盖文件里的 allow-list。未知规则 ID 以退出码 2 失败。
 
 **退出码**
 

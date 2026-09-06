@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Open-source preparation docs (CONTRIBUTING, SECURITY, CHANGELOG)
 - Polished README for public release
+- Scan Windows `.bat` / `.cmd` skill scripts (discovery, shell role, SG301)
 
 ## [0.1.2] - 2026-09-06
 

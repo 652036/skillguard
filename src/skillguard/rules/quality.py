@@ -75,7 +75,20 @@ _PREREQ_HEADER = re.compile(
     r"(?im)^#{1,4}\s+(prerequisites?|install(?:ation)?|setup|getting started|before you start)\b"
 )
 _URL = re.compile(r"https?://[^\s)\]>\"']+", re.IGNORECASE)
-_SCRIPT_SUFFIXES = {".py", ".sh", ".bash", ".zsh", ".js", ".mjs", ".cjs", ".ts", ".ps1", ".psm1"}
+_SCRIPT_SUFFIXES = {
+    ".py",
+    ".sh",
+    ".bash",
+    ".zsh",
+    ".js",
+    ".mjs",
+    ".cjs",
+    ".ts",
+    ".ps1",
+    ".psm1",
+    ".bat",
+    ".cmd",
+}
 _LICENSE_NAMES = {
     "license",
     "license.txt",

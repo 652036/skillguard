@@ -128,7 +128,7 @@ def file_roles(path: Path) -> set[str]:
         roles.update({"script", "javascript"})
     if suffix in {".sh", ".bash", ".zsh"} or name.endswith(".sh"):
         roles.update({"script", "shell"})
-    if suffix in {".ps1", ".psm1"}:
+    if suffix in {".ps1", ".psm1", ".bat", ".cmd"}:
         roles.update({"script", "shell"})
     if name.lower().startswith(".env") or suffix == ".env":
         roles.add("env")

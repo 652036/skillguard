@@ -123,10 +123,12 @@ Detectors are regex + lightweight string/AST checks. They are **not** a sandbox.
 ## GitHub Action
 
 ```yaml
-- uses: 652036/skillguard@v0.1.0   # after first release tag
+- uses: 652036/skillguard@v0.1.2   # after first release tag
   with:
     path: .
     fail-on: high
+    disable: SG301,SG304   # optional
+    # enable: SG001,SG201  # optional allow-list
 ```
 
 Or from a checked-out copy of this repository:
@@ -136,12 +138,15 @@ Or from a checked-out copy of this repository:
   with:
     path: .
     fail-on: high
+    disable: SG301,SG304
 ```
 
 **Inputs**
 
 - `path` (default `.`) — skill directory, skills repo, or a `SKILL.md` file
 - `fail-on` (default `high`) — minimum severity that fails the job (`critical` | `high` | `medium` | `low`)
+- `disable` (optional) — comma-separated rule ids to skip (e.g. `SG301,SG304`)
+- `enable` (optional) — allow-list of rule ids (comma-separated). Empty means all rules.
 
 ### GitHub code scanning (SARIF)
 
@@ -221,5 +226,4 @@ Apache License 2.0. See [LICENSE](LICENSE).
 ## Roadmap
 
 - More detectors and reduced false positives
-- Configurable rule enable/disable
 - The core offline scanner will always remain free and open-source

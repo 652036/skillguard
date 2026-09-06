@@ -107,6 +107,20 @@ def test_fail_on_medium_catches_quality_only(tmp_path: Path) -> None:
     assert medium.exit_code == 1, medium.output
 
 
+def test_disable_masks_known_fixture_finding(toxic_skill: Path) -> None:
+    baseline = runner.invoke(app, ["scan", str(toxic_skill), "--format", "json"])
+    assert baseline.exit_code == 1, baseline.output
+    found = {row["rule_id"] for row in json.loads(baseline.output)["findings"]}
+    assert "SG001" in found
+
+    disabled = runner.invoke(
+        app, ["scan", str(toxic_skill), "--format", "json", "--disable", "SG001"]
+    )
+    masked = {row["rule_id"] for row in json.loads(disabled.output)["findings"]}
+    assert "SG001" not in masked
+    assert found - {"SG001"} == masked
+
+
 def test_disable_masks_known_medium_finding(tmp_path: Path) -> None:
     skill = tmp_path / "medium-only"
     skill.mkdir()

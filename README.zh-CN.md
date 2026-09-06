@@ -117,10 +117,12 @@ skillguard rules                                 # 列出全部内置规则
 ## GitHub Action
 
 ```yaml
-- uses: 652036/skillguard@v0.1.0   # 打 tag 后
+- uses: 652036/skillguard@v0.1.2   # 打 tag 后
   with:
     path: .
     fail-on: high
+    disable: SG301,SG304   # 可选
+    # enable: SG001,SG201  # 可选 allow-list
 ```
 
 也可以在已经 checkout 本仓库后使用本地 Action：
@@ -130,12 +132,15 @@ skillguard rules                                 # 列出全部内置规则
   with:
     path: .
     fail-on: high
+    disable: SG301,SG304
 ```
 
 **输入参数**
 
 - `path`（默认 `.`）— 技能目录、技能仓库或 `SKILL.md` 文件
 - `fail-on`（默认 `high`）— 使任务失败的最低严重级别（`critical` | `high` | `medium` | `low`）
+- `disable`（可选）— 要跳过的规则 ID，逗号分隔（例如 `SG301,SG304`）
+- `enable`（可选）— 只运行这些规则 ID（逗号分隔）。为空表示全部规则。
 
 ### GitHub code scanning（SARIF）
 
@@ -215,5 +220,4 @@ Apache License 2.0。详见 [LICENSE](LICENSE)。
 ## 路线图
 
 - 更多检测器，降低误报
-- 可配置规则开关
 - 核心离线扫描器将始终保持免费开源

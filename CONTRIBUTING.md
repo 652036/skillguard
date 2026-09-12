@@ -20,6 +20,8 @@ pip install -e ".[dev]"
 pytest -q
 ```
 
+For Windows setup and the full batch workflow, see [TESTING.md](TESTING.md). Run `python scripts/smoke_test.py` to verify expected example exit codes without treating toxic fixtures as successful scans.
+
 ## Adding a new rule
 
 1. Choose the appropriate module under `src/skillguard/rules/` (`prompt_injection.py`, `secrets.py`, `execution.py`, or `quality.py`).
@@ -27,7 +29,7 @@ pytest -q
 3. Implement the checker function and register it in the module’s `RULES` and `CHECKERS`.
 4. Add unit tests under `tests/`.
 5. Add a positive and/or negative example under `examples/` if the pattern is non-trivial.
-6. Update the rules table in `README.md`.
+6. Update both `README.md` and `README.zh-CN.md`, and add an entry under `[Unreleased]` in `CHANGELOG.md`.
 
 Rule IDs follow this convention:
 
@@ -43,7 +45,11 @@ Rule IDs follow this convention:
 - Python 3.11+
 - Prefer clear, typed code over cleverness
 - Keep detectors offline and deterministic (no network, no LLM calls in the core scanner)
-- Run `pytest` and the example checks before opening a PR
+- Document known false positives and use explainable detectors
+- Run `python -m pytest`, `python -m ruff check src tests scripts`, `python -m mypy`, and `python scripts/smoke_test.py` before opening a PR
+- Keep regression tests for slow or missed inputs; use subprocess timeouts for potential scanner hangs
+
+The full suite includes generated batch fixtures. `python -m pytest -m "not bulk"` skips the thousand-package test; `python -m pytest -m bulk` runs it alone. CI runs both, checks distribution builds, and retains JUnit / coverage reports. Do not execute scripts from toxic fixtures or add real credentials to test data.
 
 ## Pull requests
 

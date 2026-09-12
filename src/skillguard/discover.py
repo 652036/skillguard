@@ -169,13 +169,13 @@ def iter_skill_files(skill: SkillRoot, scan_target: Path | None = None) -> list[
         if other.root.resolve() != skill.root.resolve() and not other.host_only
     }
     if skill.host_only:
-        files = [
+        host_files = [
             host
             for host in host_instruction_files(skill.root)
             if not _path_under_any(host, nested_roots)
         ]
-        files.sort()
-        return files
+        host_files.sort()
+        return host_files
 
     files: list[Path] = []
     for dirpath, dirnames, filenames in _walk(skill.root):
@@ -266,15 +266,15 @@ def _is_github_copilot_file(path: Path) -> bool:
 
 def _path_under_any(path: Path, roots: set[Path]) -> bool:
     resolved = path.resolve()
-    return any(resolved == root or root in resolved.parents for root in roots)
+    # Ancestor depth stays small even when a repository has thousands of skills.
+    return resolved in roots or any(parent in roots for parent in resolved.parents)
 
 
 def _should_scan_file(path: Path) -> bool:
     name = path.name
-    if name.startswith(".") and name.lower() not in SCAN_FILENAMES:
-        # Still scan .env* and hidden SKILL.md variants already covered.
-        if not name.lower().startswith(".env"):
-            return False
+    # Still scan .env* and explicitly recognized hidden files.
+    if name.startswith(".") and name.lower() not in SCAN_FILENAMES and not name.lower().startswith(".env"):
+        return False
     if name.lower() in SCAN_CREDENTIAL_NAMES:
         return True
     suffix = path.suffix.lower()
@@ -282,9 +282,7 @@ def _should_scan_file(path: Path) -> bool:
         return True
     if name.upper() == "SKILL.MD":
         return True
-    if name.upper().startswith("LICENSE"):
-        return True
-    return False
+    return name.upper().startswith("LICENSE")
 
 
 HEAD_TAIL_BYTES = 256 * 1024

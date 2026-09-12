@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from skillguard.discover import SkillRoot
+from skillguard.discover import SkillRoot, is_host_instruction_file
 from skillguard.models import Finding, Severity
 from skillguard.rules.base import Rule, line_at, snippet
 
@@ -141,7 +141,7 @@ def check_skill_quality(skill: SkillRoot, files: list[Path], contents: dict[Path
 def _oversized_instruction_files(files: list[Path]) -> list[Finding]:
     findings: list[Finding] = []
     for path in files:
-        if path.suffix.lower() not in _OVERSIZE_SUFFIXES:
+        if path.suffix.lower() not in _OVERSIZE_SUFFIXES and not is_host_instruction_file(path):
             continue
         try:
             size = path.stat().st_size

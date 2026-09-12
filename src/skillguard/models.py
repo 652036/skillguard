@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Iterable
 
 
-class Severity(str, Enum):
+class Severity(str, Enum):  # noqa: UP042 - preserve the public Enum string representation
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"

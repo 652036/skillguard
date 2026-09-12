@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from skillguard.models import Severity
+import pytest
 
+from skillguard.models import Severity
 from skillguard.rules.execution import (
     check_sg201,
     check_sg202,
@@ -13,6 +14,17 @@ from skillguard.rules.execution import (
     check_sg206,
     check_sg207,
 )
+
+
+@pytest.mark.parametrize("token", ("API_KEY", "AUTH_TOKEN", "ACCESS_TOKEN", "SECRET_KEY"))
+@pytest.mark.parametrize("prefix", ("", "$PROJECT_"))
+@pytest.mark.parametrize("reverse", (False, True))
+def test_token_query_parameter_matches_identifier_boundaries(token: str, prefix: str, reverse: bool) -> None:
+    variable = prefix + token
+    content = f"?token=filled from {variable}" if reverse else f"{variable} as a query parameter named token"
+    findings = check_sg204(Path("AGENTS.md"), content)
+    assert len(findings) == 1
+    assert findings[0].rule_id == "SG204"
 
 
 def test_pipe_to_shell_true_positive() -> None:

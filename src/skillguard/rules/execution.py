@@ -7,7 +7,14 @@ import re
 from pathlib import Path
 
 from skillguard.models import Severity
-from skillguard.rules.base import Rule, is_defense_or_negated, line_at, nearby_text, search_regex, snippet
+from skillguard.rules.base import (
+    Rule,
+    is_defense_or_negated,
+    line_at,
+    nearby_text,
+    search_regex,
+    snippet,
+)
 
 _CODE = frozenset({"skill_md", "markdown", "script", "python", "javascript", "shell", "text"})
 
@@ -158,7 +165,9 @@ _WEBHOOK_CTX = re.compile(
     '(?i)(?<![A-Za-z0-9_])\\.env\\b|readFile|os\\.environ|process\\.env|CONTEXT_FILE_PATH|id_rsa|secrets\\.env|API_KEY|AUTH_TOKEN'
 )
 _TOKEN_QP = re.compile(
-    '(?i)(?:\\$)?[A-Za-z0-9_]*?(?:API_KEY|AUTH_TOKEN|ACCESS_TOKEN|SECRET_KEY).{0,80}(?:query\\s+parameter\\s+named\\s+token|[?&]token=|as\\s+a\\s+query\\s+parameter\\s+named\\s+token)|(?:query\\s+parameter\\s+named\\s+token|[?&]token=).{0,80}(?:\\$)?[A-Za-z0-9_]*?(?:API_KEY|AUTH_TOKEN|ACCESS_TOKEN|SECRET_KEY)'
+    # Start at an identifier boundary: retrying the unbounded prefix at every
+    # character of a long identifier makes a negative match quadratic.
+    r'(?i)(?<![A-Za-z0-9_])(?:\$)?[A-Za-z0-9_]*?(?:API_KEY|AUTH_TOKEN|ACCESS_TOKEN|SECRET_KEY).{0,80}(?:query\s+parameter\s+named\s+token|[?&]token=|as\s+a\s+query\s+parameter\s+named\s+token)|(?:query\s+parameter\s+named\s+token|[?&]token=).{0,80}(?:\$)?[A-Za-z0-9_]*?(?:API_KEY|AUTH_TOKEN|ACCESS_TOKEN|SECRET_KEY)'
 )
 
 _PASTE_SITE = re.compile(
@@ -228,9 +237,7 @@ def _skip_sg203(match: re.Match[str], content: str) -> bool:
     after = content[match.end(): match.end() + 12]
     if _SKILLS_AFTER.match(after):
         return True
-    if "codex_home" in low:
-        return True
-    return False
+    return "codex_home" in low
 
 
 def check_sg203(path: Path, content: str) -> list:
@@ -240,14 +247,13 @@ def check_sg203(path: Path, content: str) -> list:
 def _skip_sg204(match: re.Match[str], content: str) -> bool:
     line = snippet(content, match.start()).lower()
     blob = match.group(0).lower()
-    if "credentials" in blob or "credentials" in line:
-        if any(s in line or s in blob for s in ("include", "omit", "same-origin")):
-            return True
+    if ("credentials" in blob or "credentials" in line) and any(
+        s in line or s in blob for s in ("include", "omit", "same-origin")
+    ):
+        return True
     # YAML frontmatter / MCP tool names are not a POST of .env / os.environ / id_rsa.
     frontmatter = "allowed-tools" in line or "webfetch" in line or "mcp__" in line
-    if frontmatter and not any(s in blob for s in _REAL_EXFIL):
-        return True
-    return False
+    return frontmatter and not any(s in blob for s in _REAL_EXFIL)
 
 
 def check_sg204(path: Path, content: str) -> list:
@@ -257,7 +263,6 @@ def check_sg204(path: Path, content: str) -> list:
         if not _WEBHOOK_CTX.search(window):
             continue
         line = snippet(content, match.start()).lower()
-        blob = match.group(0).lower()
         if ("allowed-tools" in line or "webfetch" in line or "mcp__" in line) and not any(
             s in window.lower() for s in _REAL_EXFIL
         ):
@@ -366,9 +371,12 @@ def _ast_looks_remote(node: ast.AST, remote_names: set[str]) -> bool:
             name = _call_name(child.func)
             if name in {"urlopen", "urlretrieve", "get", "post", "request"}:
                 return True
-        if isinstance(child, ast.Constant) and isinstance(child.value, str):
-            if child.value.startswith(("http://", "https://")):
-                return True
+        if (
+            isinstance(child, ast.Constant)
+            and isinstance(child.value, str)
+            and child.value.startswith(("http://", "https://"))
+        ):
+            return True
     return False
 
 

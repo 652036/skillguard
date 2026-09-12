@@ -35,15 +35,22 @@ SkillGuard 在这些问题进入主分支之前，把它们变成硬性的 CI �
 需要 Python 3.11+。
 
 ```bash
-# 发布到 PyPI 后
-pip install skillguard
-
-# 或从源码安装
+# 安装当前 main，包含尚未发布的扫描改进
 git clone https://github.com/652036/skillguard.git
 cd skillguard
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 ```
+
+Windows PowerShell 可直接使用虚拟环境中的 Python：
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m skillguard scan examples/clean-review
+```
+
+包版本仍为 `0.1.2`；[Unreleased](CHANGELOG.md#unreleased) 中的改动需要当前源码，已有的 `v0.1.2` 标签不包含这些新功能。
 
 ---
 
@@ -74,13 +81,35 @@ skillguard rules                                 # 列出全部内置规则
 
 **规则开关**
 
-`--disable` / `--enable` 会与从扫描路径向上查找的配置文件合并：`skillguard.toml`、`.skillguard.yml`。`--disable` 与文件合并，`--enable` 覆盖文件里的 allow-list。未知规则 ID 以退出码 2 失败。
+`--disable` / `--enable` 会与从扫描路径向上找到的最近一份配置合并。同一目录按以下顺序查找：`skillguard.toml`、`.skillguard.toml`、`.skillguard.yml`、`.skillguard.yaml`、`skillguard.yml`、`skillguard.yaml`。
+
+```toml
+disable = ["SG301", "SG304"]
+# enable = ["SG001", "SG201"]   # 可选 allow-list
+```
+
+`--disable` 与文件里的禁用项合并，`--enable` 覆盖文件里的 allow-list；禁用项始终优先。未知规则 ID 以退出码 2 失败。`skillguard rules` 仍列出全部内置规则。YAML 仅支持顶层 `disable` / `enable` 简单列表，不支持完整 YAML 语法。
 
 **退出码**
 
 - `0` — 干净（没有达到或超过阈值的 finding）
 - `1` — 存在 ≥ `--fail-on` 级别的 finding
 - `2` — 参数错误或路径不存在
+
+### 扫描范围
+
+| 扫描目标 | 实际覆盖 |
+|----------|----------|
+| 包含技能的目录 | 可见目录内的每份 `SKILL.md` 技能包，以及技能包之外的宿主指令 |
+| 技能目录 | 支持的文本、资源和脚本，包含 `.bat` / `.cmd`；嵌套技能单独归属 |
+| 不含 `SKILL.md` 的目录 | 作为散装技能扫描支持的文件，SG302 提示缺少技能元数据 |
+| 明确指定的文件 | 只扫描该文件；需要检查配套脚本时应传入目录 |
+
+宿主指令包括 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`.cursorrules`、`.cursor/rules/**`，以及 Copilot 的 `.github/copilot-instructions.md` / `.github/instructions/**`。规则目录接受 `.md`、`.markdown`、`.mdc`、`.txt`。技能包之外的宿主指令单独归组，不产生缺少技能或许可证的 SG301/SG302；报告的 `skills` 列表目前也包含这个宿主分组。
+
+发现过程跳过 `.git`、虚拟环境、缓存、`node_modules`、`build`、`dist` 和普通隐藏目录。扫描隐藏目录中的技能时，请明确传入该技能目录。指定的宿主规则目录和包内 `.ssh` / `.aws` 资源是例外；目录扫描不包含 `.github/workflows` 和 `.cursor/cache`。存在嵌套技能时，包外无关文件不属于仓库扫描范围。
+
+前 8 KiB 含 NUL 字节的文件会跳过。文本优先按 UTF-8 解码，失败时回退 Latin-1，不支持 UTF-16。超过 1,000,000 字节的文件只检查首尾各 256 KiB；超大的指令文件还会触发 SG305，包含 Cursor 规则。中间部分不会检查，尾部 finding 的行号对应截断后文本。扫描通过不能证明技能安全。
 
 ---
 
@@ -121,7 +150,7 @@ skillguard rules                                 # 列出全部内置规则
 ## GitHub Action
 
 ```yaml
-- uses: 652036/skillguard@v0.1.2   # 打 tag 后
+- uses: 652036/skillguard@v0.1.2   # 已发布的规则开关功能；新功能见 Unreleased
   with:
     path: .
     fail-on: high
@@ -129,7 +158,7 @@ skillguard rules                                 # 列出全部内置规则
     # enable: SG001,SG201  # 可选 allow-list
 ```
 
-也可以在已经 checkout 本仓库后使用本地 Action：
+要使用当前源码的新功能，可在 checkout 本仓库后使用本地 Action：
 
 ```yaml
 - uses: ./
@@ -170,7 +199,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install skillguard
+      - run: pip install "git+https://github.com/652036/skillguard.git@v0.1.2"
       - name: Scan skills
         run: skillguard scan . --format sarif > skillguard.sarif
         continue-on-error: true
@@ -200,12 +229,16 @@ toxic 示例**不含可用恶意载荷**，仅用于触发检测器。
 
 ```bash
 pip install -e ".[dev]"
-pytest -q
-ruff check src tests
-skillguard scan examples/
+python -m pytest --cov=skillguard --cov-report=term-missing
+python -m ruff check src tests scripts
+python -m mypy
+python scripts/smoke_test.py
+python -m build
 ```
 
-如何添加规则、测试和文档，请见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+默认测试包含 1,944 组宿主 CLI 组合、配置组合和生成的 1,010 个技能包／4,019 个扫描文件。CI 覆盖 Ubuntu、Windows 上的 Python 3.11–3.14，以及 lint、类型检查、打包和安装 wheel 后的 CLI 检查。测试不会执行被扫描的夹具脚本。
+
+批量测试命令和证据见 [TESTING.md](TESTING.md)；添加规则、测试和文档的要求见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ---
 

@@ -38,6 +38,7 @@ dev = [
     "pytest-cov>=5.0",
     "ruff>=0.6",
     "mypy>=1.11",
+    "build>=1.2",
 ]
 
 [project.scripts]
@@ -58,6 +59,7 @@ skillguard = ["py.typed"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+markers = ["bulk: generated large-corpus integration tests"]
 
 [tool.ruff]
 line-length = 100
@@ -70,6 +72,9 @@ ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["skillguard"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["typer.Argument", "typer.Option"]
 
 [tool.mypy]
 python_version = "3.11"

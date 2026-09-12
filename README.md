@@ -35,15 +35,22 @@ Scans never touch the network. Results are fully reproducible. No telemetry.
 Requires Python 3.11+.
 
 ```bash
-# Once published to PyPI
-pip install skillguard
-
-# Or from source
+# Install the current main branch, including unreleased scanning improvements
 git clone https://github.com/652036/skillguard.git
 cd skillguard
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 ```
+
+On Windows PowerShell, create and use the virtual environment directly:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m skillguard scan examples/clean-review
+```
+
+The package version remains `0.1.2`; changes under [Unreleased](CHANGELOG.md#unreleased) require the current source checkout and are not included in the existing `v0.1.2` tag.
 
 ---
 
@@ -73,20 +80,35 @@ skillguard rules                                 # list all built-in rules
 CLI `--disable` / `--enable` combine with an optional config file walked upward from the scan path:
 
 - `skillguard.toml` / `.skillguard.toml`
-- `.skillguard.yml` / `skillguard.yml`
+- `.skillguard.yml` / `.skillguard.yaml` / `skillguard.yml` / `skillguard.yaml`
 
 ```toml
 disable = ["SG301", "SG304"]
 # enable = ["SG001", "SG201"]   # optional allow-list
 ```
 
-`--disable` merges with the file. `--enable` replaces a file `enable` list. Unknown ids exit 2. `skillguard rules` still lists the full built-in set.
+The nearest config wins; files are checked in the order `skillguard.toml`, `.skillguard.toml`, `.skillguard.yml`, `.skillguard.yaml`, `skillguard.yml`, `skillguard.yaml`. `--disable` merges with the file. `--enable` replaces a file `enable` list, and disabled rules remain disabled. Unknown ids exit 2. `skillguard rules` still lists the full built-in set. YAML supports simple top-level `disable` / `enable` lists, not general YAML features.
 
 **Exit codes**
 
 - `0` — clean (no findings at or above the threshold)
 - `1` — findings ≥ `--fail-on` severity
 - `2` — invalid arguments / path errors
+
+### What a scan includes
+
+| Target | Coverage |
+|--------|----------|
+| Directory containing skills | Each visible nested `SKILL.md` package, plus host instructions outside those packages |
+| Skill directory | Supported text/resources and scripts, including `.bat` / `.cmd`; nested skills are attributed separately |
+| Directory without a `SKILL.md` | A loose package: supported files are scanned and SG302 reports missing skill metadata |
+| Explicit file | That file only; point to the directory to scan companion scripts |
+
+Host instructions include `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.cursorrules`, `.cursor/rules/**` and GitHub Copilot's `.github/copilot-instructions.md` / `.github/instructions/**`. The rule directories accept `.md`, `.markdown`, `.mdc`, and `.txt`. Uncovered host instructions are grouped separately and do not produce missing-skill or missing-license findings (SG301/SG302). The report's `skills` list currently includes this host group.
+
+Discovery skips `.git`, virtual environments, caches, `node_modules`, `build`, `dist`, and ordinary hidden directories. Pass a hidden skill directory explicitly to scan it. Selected host rule directories and packaged `.ssh` / `.aws` resources are exceptions; `.github/workflows` and `.cursor/cache` are excluded during directory discovery. When nested skills exist, unrelated files outside packages are not part of a repository scan.
+
+Files with NUL bytes in their first 8 KiB are skipped. Text is decoded as UTF-8 with a Latin-1 fallback; UTF-16 is not supported. Files over 1,000,000 bytes are scanned using the first and last 256 KiB. Oversized instruction files also trigger SG305, including Cursor rules. The middle is not inspected, and tail finding line numbers refer to the truncated text. A clean result is not proof that a skill is safe.
 
 ---
 
@@ -127,7 +149,7 @@ Detectors are regex + lightweight string/AST checks. They are **not** a sandbox.
 ## GitHub Action
 
 ```yaml
-- uses: 652036/skillguard@v0.1.2   # after first release tag
+- uses: 652036/skillguard@v0.1.2   # released rules/filter support; see Unreleased for newer features
   with:
     path: .
     fail-on: high
@@ -135,7 +157,7 @@ Detectors are regex + lightweight string/AST checks. They are **not** a sandbox.
     # enable: SG001,SG201  # optional allow-list
 ```
 
-Or from a checked-out copy of this repository:
+To use the current source features, run from a checked-out copy of this repository:
 
 ```yaml
 - uses: ./
@@ -176,7 +198,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install skillguard
+      - run: pip install "git+https://github.com/652036/skillguard.git@v0.1.2"
       - name: Scan skills
         run: skillguard scan . --format sarif > skillguard.sarif
         continue-on-error: true
@@ -206,12 +228,16 @@ The toxic examples contain **no live malicious payloads**; they exist only to ex
 
 ```bash
 pip install -e ".[dev]"
-pytest -q
-ruff check src tests
-skillguard scan examples/
+python -m pytest --cov=skillguard --cov-report=term-missing
+python -m ruff check src tests scripts
+python -m mypy
+python scripts/smoke_test.py
+python -m build
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add rules, tests, and documentation.
+The default suite includes a 1,944-case host CLI matrix, configuration combinations, and a generated corpus with 1,010 skill packages / 4,019 scanned files. CI runs Python 3.11–3.14 on Ubuntu and Windows, plus lint, type checks, distribution builds, and installed-wheel CLI checks. Scanned fixture scripts are never executed.
+
+See [TESTING.md](TESTING.md) for batch commands and evidence, and [CONTRIBUTING.md](CONTRIBUTING.md) for adding rules, tests, and documentation.
 
 ---
 

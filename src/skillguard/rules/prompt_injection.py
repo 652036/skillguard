@@ -6,7 +6,14 @@ import re
 from pathlib import Path
 
 from skillguard.models import Severity
-from skillguard.rules.base import Rule, is_defense_or_negated, line_at, nearby_text, search_regex, snippet
+from skillguard.rules.base import (
+    Rule,
+    is_defense_or_negated,
+    line_at,
+    nearby_text,
+    search_regex,
+    snippet,
+)
 
 _TEXT = frozenset({"skill_md", "markdown", "text", "config", "script"})
 
@@ -311,9 +318,7 @@ def _skip_sg006(match: re.Match[str], content: str) -> bool:
         if tool_m.group(1).lower() in _SG006_ALLOW:
             return True
         window3 = nearby_text(content, match.start(), before=1, after=1)
-        if not _REMOTE_INSTALL.search(window3):
-            return True
-        return False
+        return not _REMOTE_INSTALL.search(window3)
     always = (
         'talking to your human',
         'tell your human',
@@ -328,12 +333,9 @@ def _skip_sg006(match: re.Match[str], content: str) -> bool:
     )
     if any(s in matched for s in always):
         return False
-    if "paste" in matched and "into" in matched and "terminal" in matched:
-        if "paste this" not in matched:
-            window = nearby_text(content, match.start(), before=2, after=3)
-            if _PASTE_HINT.search(window):
-                return False
-            return True
+    if "paste" in matched and "into" in matched and "terminal" in matched and "paste this" not in matched:
+        window = nearby_text(content, match.start(), before=2, after=3)
+        return not _PASTE_HINT.search(window)
     window = nearby_text(content, match.start(), before=2, after=3)
     if is_defense_or_negated(window):
         return True
@@ -344,10 +346,7 @@ def _skip_sg006(match: re.Match[str], content: str) -> bool:
     )
     if any(s in line or s in window.lower() for s in local):
         return True
-    if matched.startswith("tell ") and "your human" not in matched:
-        if not _PIPE_SHELL.search(window):
-            return True
-    return False
+    return matched.startswith("tell ") and "your human" not in matched and not _PIPE_SHELL.search(window)
 
 
 def check_sg006(path: Path, content: str) -> list:

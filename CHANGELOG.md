@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scan Windows `.bat` / `.cmd` skill scripts (discovery, shell role, SG301)
 - Scan host instruction files (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.cursor/rules`) even when nested `SKILL.md` packages exist
 - Scan Gemini (`GEMINI.md`) and GitHub Copilot (`.github/copilot-instructions.md`, `.github/instructions/*.md`) host instruction files even when nested `SKILL.md` packages exist
+- A 1,944-case host CLI matrix, 90 config/output combinations, and a deterministic 1,010-package / 4,019-file bulk fixture
+- Ubuntu and Windows CI for Python 3.11–3.14, lint/type checks, JUnit and coverage artifacts, and installed-wheel CLI smoke tests
+- Batch testing guide and synchronized English/Chinese discovery, filtering, and source-install documentation
+
+### Fixed
+- Bound SG204 token-query matching to identifier starts to avoid quadratic scans of long padding strings
+- Report oversized `.cursorrules` and `.cursor/rules/*.mdc` files with SG305
+- Avoid iterating over every skill root for each host-file ancestry check in large repositories
+- Resolve existing lint and duplicate-variable typing errors so static checks run in CI
 
 ## [0.1.2] - 2026-09-06
 

@@ -32,11 +32,18 @@ runs:
         python-version: "3.12"
     - name: Install SkillGuard
       shell: bash
-      run: pip install -e "${{ github.action_path }}"
+      env:
+        SKILLGUARD_ACTION_PATH: ${{ github.action_path }}
+      run: python -m pip install -e "$SKILLGUARD_ACTION_PATH"
     - name: Scan skills
       shell: bash
+      env:
+        SKILLGUARD_PATH: ${{ inputs.path }}
+        SKILLGUARD_FAIL_ON: ${{ inputs.fail-on }}
+        SKILLGUARD_DISABLE: ${{ inputs.disable }}
+        SKILLGUARD_ENABLE: ${{ inputs.enable }}
       run: |
         extra=()
-        if [ -n "${{ inputs.disable }}" ]; then extra+=(--disable "${{ inputs.disable }}"); fi
-        if [ -n "${{ inputs.enable }}" ]; then extra+=(--enable "${{ inputs.enable }}"); fi
-        skillguard scan "${{ inputs.path }}" --fail-on "${{ inputs.fail-on }}" "${extra[@]}"
+        if [ -n "$SKILLGUARD_DISABLE" ]; then extra+=(--disable "$SKILLGUARD_DISABLE"); fi
+        if [ -n "$SKILLGUARD_ENABLE" ]; then extra+=(--enable "$SKILLGUARD_ENABLE"); fi
+        skillguard scan "$SKILLGUARD_PATH" --fail-on "$SKILLGUARD_FAIL_ON" "${extra[@]}"
